@@ -15,7 +15,7 @@ contract PaperScore is ERC1155, AccessControl, ERC1155Supply {
 
     // Define a public mapping 'papers' that maps the Id to a paper.
     // uint => Item
-    mapping(uint => paper) papers;
+    mapping(uint => Paper) papers;
 
     // Define a public mapping 'papersHistory' that maps the id to an array of TxHash, that track its journey through paperScore protocol
     // id => string[]
@@ -27,7 +27,7 @@ contract PaperScore is ERC1155, AccessControl, ERC1155Supply {
       Submitted,   //0
       Checked,     //1
       UnderReview, //2 
-      Reviwed,     //3
+      Reviewed,    //3
       Published    //4
     }
 
@@ -47,7 +47,7 @@ contract PaperScore is ERC1155, AccessControl, ERC1155Supply {
     }
 
     // Define 5 events with the same 5 state values and accept 'paperId' as input argument
-    event Submitted(uint paperId, string ipfsHash, );
+    event Submitted(uint indexed paperId, string ipfsHash, address[] reviewers);
     event Checked(uint paperId);
     event UnderReview(uint paperId);
     event Reviwed(uint paperId);
@@ -102,7 +102,7 @@ contract PaperScore is ERC1155, AccessControl, ERC1155Supply {
   {
     // require(hasRole(AUTHOR, msg.sender), "You are not the author");
     // Add the new paper
-    items[paperId] = Paper({
+    papers[paperId] = Paper({
         // Paper ID:
         paperId: paperId,
         // Author address:
@@ -122,7 +122,7 @@ contract PaperScore is ERC1155, AccessControl, ERC1155Supply {
         });
 
     // Emit submit event
-    emit Submitted(paperId, ipfsHash, paperState, reviewers);
+    emit Submitted(paperId, _ipfsHash, _reviewers);
     // Increment paperId
     paperId++;
   }

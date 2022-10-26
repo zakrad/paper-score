@@ -1,9 +1,10 @@
-const { ethers, upgrades } = require("hardhat");
+// const { ethers, upgrades } = require("hardhat");
 
 async function main() {
 
   const PaperScore = await hre.ethers.getContractFactory("PaperScore");
-  const paperscore = await upgrades.deployProxy(PaperScore);
+  // const paperscore = await upgrades.deployProxy(PaperScore);
+  const paperscore = await PaperScore.deploy()
 
   await paperscore.deployed();
 
@@ -21,4 +22,4 @@ main()
     process.exit(1);
   });
 
-//
+// 0x5FbDB2315678afecb367f032d93F642f64180aa3
