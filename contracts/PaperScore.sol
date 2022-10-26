@@ -7,8 +7,8 @@ import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Supply.sol";
 
 contract PaperScore is ERC1155, AccessControl, ERC1155Supply {
     bytes32 public constant URI_SETTER_ROLE = keccak256("URI_SETTER_ROLE");
-    bytes32 public constant MINTER_ROLE = keccak256("AUTHOR");
-    bytes32 public constant MINTER_ROLE = keccak256("REVIWER");
+    bytes32 public constant AUTHOR = keccak256("AUTHOR");
+    bytes32 public constant REVIWER = keccak256("REVIWER");
 
     // Define Id variable for each paper
     uint paperId = 0;
@@ -53,12 +53,47 @@ contract PaperScore is ERC1155, AccessControl, ERC1155Supply {
     event Reviwed(uint paperId);
     event Published(uint paperId);
 
+    // Modifiers
+    // Define a modifier that checks if a paper.state of a paperId is Submitted
+    modifier submitted(uint _paperId) {
+      require(papers[_paperId].paperState == State.Submitted, "This paper hasn't been submitted yet.");
+      _;
+    }
+
+    // Define a modifier that checks if a paper.state of a paperId is Checked
+    modifier checked(uint _paperId) {
+      require(papers[_paperId].paperState == State.Checked, "This paper hasn't been checked yet.");
+      _;
+    }
+
+    // Define a modifier that checks if a paper.state of a paperId is underReview
+    modifier underReview(uint _paperId) {
+      require(papers[_paperId].paperState == State.UnderReview, "This paper is still under review.");
+      _;
+    }
+
+    // Define a modifier that checks if a paper.state of a paperId is Reviewed
+    modifier reviewed(uint _paperId) {
+      require(papers[_paperId].paperState == State.Reviewed, "This paper hasn't been reviewed yet.");
+      _;
+    }
+
+    // Define a modifier that checks if a paper.state of a paperId is Reviewed
+    modifier published(uint _paperId) {
+      require(papers[_paperId].paperState == State.Published, "This paper hasn't been published yet.");
+      _;
+    }
+
+
     constructor() ERC1155("https://paperscore-metadata-api/{id}") {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(URI_SETTER_ROLE, msg.sender);
-        _grantRole(AUTHOR, msg.sender);
-        _grantRole(REVIWER, msg.sender);
+        // _grantRole(AUTHOR, msg.sender);
+        // _grantRole(REVIWER, msg.sender);
     }
+
+    
+
 
     function setURI(string memory newuri) public onlyRole(URI_SETTER_ROLE) {
         _setURI(newuri);
@@ -66,14 +101,14 @@ contract PaperScore is ERC1155, AccessControl, ERC1155Supply {
 
     function mint(address account, uint256 id, uint256 amount, bytes memory data)
         public
-        onlyRole(MINTER_ROLE)
+        onlyRole(DEFAULT_ADMIN_ROLE)
     {
         _mint(account, id, amount, data);
     }
 
     function mintBatch(address to, uint256[] memory ids, uint256[] memory amounts, bytes memory data)
         public
-        onlyRole(MINTER_ROLE)
+        onlyRole(DEFAULT_ADMIN_ROLE)
     {
         _mintBatch(to, ids, amounts, data);
     }
