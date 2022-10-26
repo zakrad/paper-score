@@ -7,18 +7,36 @@ import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Supply.sol";
 
 contract PaperScore is ERC1155, AccessControl, ERC1155Supply {
     bytes32 public constant URI_SETTER_ROLE = keccak256("URI_SETTER_ROLE");
-    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+    bytes32 public constant MINTER_ROLE = keccak256("AUTHOR");
+    bytes32 public constant MINTER_ROLE = keccak256("REVIWER");
+    uint paperId = 1;
 
-    struct plan {
+    mapping(uint => paper) papers;
+    mapping (uint => string[]) papersHistory;
+
+    enum State 
+    { 
+      Submitted,
+      Checked, 
+      UnderReview, 
+      Reviwed, 
+      Published
+    }
+
+
+
+    struct paper {
         address author;
         string title;
         string ipfshash;
+        
     }
 
     constructor() ERC1155("https://paperscore-metadata-api/{id}") {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(URI_SETTER_ROLE, msg.sender);
-        _grantRole(MINTER_ROLE, msg.sender);
+        _grantRole(AUTHOR, msg.sender);
+        _grantRole(REVIWER, msg.sender);
     }
 
     function setURI(string memory newuri) public onlyRole(URI_SETTER_ROLE) {
