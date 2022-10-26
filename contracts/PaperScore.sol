@@ -11,7 +11,7 @@ contract PaperScore is ERC1155, AccessControl, ERC1155Supply {
     bytes32 public constant REVIWER = keccak256("REVIWER");
 
     // Define Id variable for each paper
-    uint paperId = 0;
+    uint paperId = 1;
 
     // Define a public mapping 'papers' that maps the Id to a paper.
     // uint => Item
@@ -35,7 +35,7 @@ contract PaperScore is ERC1155, AccessControl, ERC1155Supply {
     State constant defaultState = State.Submitted;
 
     // Define a struct 'paper' with the following fields:
-    struct paper {
+    struct Paper {
         uint paperId;        // Paper ID
         address author;      // Author address
         string title;        // Paper title
@@ -84,14 +84,48 @@ contract PaperScore is ERC1155, AccessControl, ERC1155Supply {
       _;
     }
 
-
+    // In the constructor set 'admin' to the address that instantiated the contract
     constructor() ERC1155("https://paperscore-metadata-api/{id}") {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(URI_SETTER_ROLE, msg.sender);
-        // _grantRole(AUTHOR, msg.sender);
+        _grantRole(AUTHOR, msg.sender);
         // _grantRole(REVIWER, msg.sender);
     }
+    
+   // Functions //
+   // Define a function 'submitPaper' that allows an author to mark an item 'Submitted'
 
+   function submitPaper(
+    string memory _title,
+    string memory _ipfsHash,
+    address[] memory _reviewers) public payable 
+  {
+    require(hasRole(AUTHOR, msg.sender), "You are not the author");
+    // Add the new paper
+    items[paperId] = Paper({
+        // Paper ID:
+        paperId: paperId,
+        // Author address:
+        author: msg.sender,
+        // Title:
+        title: _title,
+        // Ipfs Address of paper:
+        ipfsHash: _ipfsHash,
+        // Paper price to mint access NFT:
+        accessPrice: uint(0),
+        // Median Score::
+        medianScore: uint(0),
+        // Paper state:
+        paperState: defaultState,
+        // Suggested reviewers by author:
+        reviewers: _reviewers
+        });
+
+    // Emit submit event
+    emit Submitted(paperId);
+    // Increment paperId
+    paperId++;
+  }
     
 
 
