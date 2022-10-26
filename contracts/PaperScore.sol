@@ -9,28 +9,49 @@ contract PaperScore is ERC1155, AccessControl, ERC1155Supply {
     bytes32 public constant URI_SETTER_ROLE = keccak256("URI_SETTER_ROLE");
     bytes32 public constant MINTER_ROLE = keccak256("AUTHOR");
     bytes32 public constant MINTER_ROLE = keccak256("REVIWER");
-    uint paperId = 1;
 
+    // Define Id variable for each paper
+    uint paperId = 0;
+
+    // Define a public mapping 'papers' that maps the Id to a paper.
+    // uint => Item
     mapping(uint => paper) papers;
+
+    // Define a public mapping 'papersHistory' that maps the id to an array of TxHash, that track its journey through paperScore protocol
+    // id => string[]
     mapping (uint => string[]) papersHistory;
 
+    // Define enum 'State' with the following values:
     enum State 
     { 
-      Submitted,
-      Checked, 
-      UnderReview, 
-      Reviwed, 
-      Published
+      Submitted,   //0
+      Checked,     //1
+      UnderReview, //2 
+      Reviwed,     //3
+      Published    //4
     }
 
+    // Define a default state with submitted state:
+    State constant defaultState = State.Submitted;
 
-
+    // Define a struct 'paper' with the following fields:
     struct paper {
-        address author;
-        string title;
-        string ipfshash;
-        
+        uint paperId;        // Paper ID
+        address author;      // Author address
+        string title;        // Paper title
+        string ipfsHash;     // Ipfs address of paper
+        uint accessPrice;    // Price to mint an access NFT
+        uint medianScore;    // Median score of paper calculated by PaperScore
+        State paperState;    // Paper State as represented in the enum State
+        address[] reviewers; // Array of reviewers 
     }
+
+    // Define 5 events with the same 5 state values and accept 'paperId' as input argument
+    event Submitted(uint paperId);
+    event Checked(uint paperId);
+    event UnderReview(uint paperId);
+    event Reviwed(uint paperId);
+    event Published(uint paperId);
 
     constructor() ERC1155("https://paperscore-metadata-api/{id}") {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
