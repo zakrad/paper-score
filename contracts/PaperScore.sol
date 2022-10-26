@@ -47,7 +47,7 @@ contract PaperScore is ERC1155, AccessControl, ERC1155Supply {
     }
 
     // Define 5 events with the same 5 state values and accept 'paperId' as input argument
-    event Submitted(uint paperId);
+    event Submitted(uint paperId, string ipfsHash, );
     event Checked(uint paperId);
     event UnderReview(uint paperId);
     event Reviwed(uint paperId);
@@ -98,9 +98,9 @@ contract PaperScore is ERC1155, AccessControl, ERC1155Supply {
    function submitPaper(
     string memory _title,
     string memory _ipfsHash,
-    address[] memory _reviewers) public payable 
+    address[] memory _reviewers) public payable onlyRole(AUTHOR)
   {
-    require(hasRole(AUTHOR, msg.sender), "You are not the author");
+    // require(hasRole(AUTHOR, msg.sender), "You are not the author");
     // Add the new paper
     items[paperId] = Paper({
         // Paper ID:
@@ -122,7 +122,7 @@ contract PaperScore is ERC1155, AccessControl, ERC1155Supply {
         });
 
     // Emit submit event
-    emit Submitted(paperId);
+    emit Submitted(paperId, ipfsHash, paperState, reviewers);
     // Increment paperId
     paperId++;
   }
