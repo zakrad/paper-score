@@ -8,7 +8,6 @@ import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Supply.sol";
 contract PaperScore is ERC1155, AccessControl, ERC1155Supply {
     bytes32 public constant URI_SETTER_ROLE = keccak256("URI_SETTER_ROLE");
     bytes32 public constant AUTHOR = keccak256("AUTHOR");
-    bytes32 public constant REVIWER = keccak256("REVIWER");
 
     // Define Id variable for each paper
     uint paperId = 1;
@@ -89,7 +88,6 @@ contract PaperScore is ERC1155, AccessControl, ERC1155Supply {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(URI_SETTER_ROLE, msg.sender);
         _grantRole(AUTHOR, msg.sender);
-        // _grantRole(REVIWER, msg.sender);
     }
     
    // Functions //
@@ -126,6 +124,48 @@ contract PaperScore is ERC1155, AccessControl, ERC1155Supply {
     // Increment paperId
     paperId++;
   }
+
+  // Define a function 'fetchPaperData' that fetches the data
+  function fetchPaperData(uint _paperId) public view returns(
+    uint id, 
+    address author, 
+    string memory title, 
+    string memory ipfsHash, 
+    uint accessPrice, 
+    uint medianScore, 
+    State paperState, 
+    address[] memory reviewers)
+  {
+    id = papers[_paperId].paperId;
+    author = papers[_paperId].author;
+    title = papers[_paperId].title;
+    ipfsHash = papers[_paperId].ipfsHash;
+    accessPrice = papers[_paperId].accessPrice;
+    medianScore = papers[_paperId].medianScore;
+    paperState = papers[_paperId].paperState;
+    reviewers = papers[_paperId].reviewers;
+
+    return (
+      id,
+      author,
+      title,
+      ipfsHash,
+      accessPrice,
+      medianScore,
+      paperState,
+      reviewers
+    );
+  }
+
+   function checkPaper(
+    string memory _paperId,
+    string memory _ipfsHash,
+    address[] memory _reviewers) public   onlyRole(DEFAULT_ADMIN_ROLE)
+  {
+
+  }
+
+
     
 
 
