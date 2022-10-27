@@ -29,9 +29,8 @@ contract Review is AccessControl {
       {
         reviewers[_reviewers[i]].reviewer = _reviewers[i];
         reviewers[_reviewers[i]].reviewerScore = uint(0);
-        for (uint256 j = 0; j < _paperIds.length; j++){
-            reviewers[_reviewers[i]].allowToReview.push(_paperIds[j]);
-        }
+        for (uint256 j = 0; j < _paperIds.length; j++)
+            reviewers[_reviewers[i]].allowToReview.push(_paperIds[j]);        
       }
     }
 }
