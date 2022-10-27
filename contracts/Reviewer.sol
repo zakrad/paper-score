@@ -17,9 +17,13 @@ contract Review is Ownable {
         mapping (uint => uint[5]) scores; // Ids to submitted scores
     }
 
-    constructor() {
-    }
-
+    // Define 5 event to listen changes in reviewer smart contract
+    event ReviewerAdded(address[] reviewers);
+    event PaperAssigned(address[] reviewers, uint[] paperIds);
+    event PaperScoreSubmitted(uint paperId, uint[5] scores);
+    event ReviewerChanged(uint paperId, address nextReviewer);
+    event ReviewerScored(address reviewer, uint reviewerPoint);
+    
     // Define a function to add a reviewer
     function addReviewer(address[] memory _reviewers) public onlyOwner{
     require(_reviewers.length > 0, 'Array is empty. please add a reviewer public address');
@@ -27,7 +31,8 @@ contract Review is Ownable {
         if(!isReviewer(_reviewers[i]) && _reviewers[i] != address(0)){
           reviewerExists[_reviewers[i]] = true;
           reviewers[_reviewers[i]].reviewer = _reviewers[i];     
-        }            
+        }
+    emit ReviewerAdded(_reviewers);            
     }
 
     // Define a function to assign paper to reviewer
@@ -39,7 +44,8 @@ contract Review is Ownable {
                 if(!allowed(_reviewers[i], _paperIds[j]))
                 reviewers[_reviewers[i]].allowed[_paperIds[j]] = true;
             }
-        }            
+        } 
+    emit PaperAssigned(_reviewers, _paperIds);                       
     }
 
     //Define a function to submit paper scores
@@ -48,6 +54,7 @@ contract Review is Ownable {
         require(allowed(msg.sender, _paperId), 'You are not allowed to submit score for this paper');
         reviewers[msg.sender].scores[_paperId] = _scores;
         reviewers[msg.sender].allowed[_paperId] = false;
+        emit PaperScoreSubmitted(_paperId, _scores);                       
     }
 
     //Define a fucntion to pass access to next reviewer
@@ -57,13 +64,15 @@ contract Review is Ownable {
         require(allowed(msg.sender, _paperId), 'You are not allowed to submit score for this paper');
         reviewers[msg.sender].allowed[_paperId] = false;
         reviewers[_nextReviewer].allowed[_paperId] = true;
+        emit ReviewerChanged(_paperId, _nextReviewer);                       
     }
 
     //Define a fucntion to score Reviewer
     function scoreReviewer(address _reviewer, uint _reviewerPoint) public onlyOwner {
         require(isReviewer(_reviewer), 'Address is not a reviewer');
         require(_reviewerPoint >= 0 && _reviewerPoint <= 10, 'submit a valid score');
-        reviewers[_reviewer].reviewerPoint = _reviewerPoint;     
+        reviewers[_reviewer].reviewerPoint = _reviewerPoint;
+        emit ReviewerScored(_reviewer, _reviewerPoint);                       
     }
 
     

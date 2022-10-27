@@ -166,8 +166,6 @@ contract PaperScore is ERC1155, AccessControl, ERC1155Supply {
   }
 
 
-    
-
 
     function setURI(string memory newuri) public onlyRole(URI_SETTER_ROLE) {
         _setURI(newuri);
