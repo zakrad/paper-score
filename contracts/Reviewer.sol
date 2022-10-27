@@ -1,11 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract Review is AccessControl {
-    bytes32 public constant REVIWER = keccak256("REVIWER");
-
+contract Review is Ownable {
     // Define a public mapping 'reviwers' that maps the address to a reviewer.
     // address => Reviewer
     mapping(address => Reviewer) reviewers;
@@ -20,12 +18,10 @@ contract Review is AccessControl {
     }
 
     constructor() {
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        // _grantRole(REVIWER, msg.sender);
     }
 
     // Define a function to add a reviewer
-    function addReviewer(address[] memory _reviewers) public onlyRole(DEFAULT_ADMIN_ROLE){
+    function addReviewer(address[] memory _reviewers) public onlyOwner{
     require(_reviewers.length > 0, 'Array is empty. please add a reviewer public address');
     for (uint256 i = 0; i < _reviewers.length; i++)
         if(!isReviewer(_reviewers[i]) && _reviewers[i] != address(0)){
@@ -35,7 +31,7 @@ contract Review is AccessControl {
     }
 
     // Define a function to assign paper to reviewer
-    function assignPaper(address[] memory _reviewers, uint[] memory _paperIds) public onlyRole(DEFAULT_ADMIN_ROLE){
+    function assignPaper(address[] memory _reviewers, uint[] memory _paperIds) public onlyOwner {
     require(_reviewers.length > 0 && _paperIds.length > 0, 'You can not send and empty array');
     for (uint256 i = 0; i < _reviewers.length; i++)
         if(isReviewer(_reviewers[i])){
@@ -64,7 +60,7 @@ contract Review is AccessControl {
     }
 
     //Define a fucntion to score Reviewer
-    function scoreReviewer(address _reviewer, uint _reviewerPoint) public onlyRole(DEFAULT_ADMIN_ROLE){
+    function scoreReviewer(address _reviewer, uint _reviewerPoint) public onlyOwner {
         require(isReviewer(_reviewer), 'Address is not a reviewer');
         require(_reviewerPoint >= 0 && _reviewerPoint <= 10, 'submit a valid score');
         reviewers[_reviewer].reviewerPoint = _reviewerPoint;     
@@ -78,7 +74,7 @@ contract Review is AccessControl {
     }
 
     // Helper function to check if address is allowed to submit score for paper
-    function allowed(address _address, uint _paperId) public view returns(bool _exists){
+    function allowed(address _address, uint _paperId) public view returns(bool _allowed){
         return reviewers[_address].allowed[_paperId];
     }
 }
