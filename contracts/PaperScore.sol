@@ -13,7 +13,7 @@ contract PaperScore is ERC1155, AccessControl, ERC1155Supply {
     uint paperId = 1;
 
     // Define a public mapping 'papers' that maps the Id to a paper.
-    // uint => Item
+    // uint => Paper
     mapping(uint => Paper) papers;
 
     // Define a public mapping 'papersHistory' that maps the id to an array of TxHash, that track its journey through paperScore protocol
