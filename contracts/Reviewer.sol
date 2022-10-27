@@ -20,10 +20,10 @@ contract Review is Ownable {
     // Define 5 event to listen changes in reviewer smart contract
     event ReviewerAdded(address[] reviewers);
     event PaperAssigned(address[] reviewers, uint[] paperIds);
-    event PaperScoreSubmitted(uint paperId, uint[5] scores);
+    event ReviewScoreSubmitted(uint paperId, uint[5] scores);
     event ReviewerChanged(uint paperId, address nextReviewer);
     event ReviewerScored(address reviewer, uint reviewerPoint);
-    
+
     // Define a function to add a reviewer
     function addReviewer(address[] memory _reviewers) public onlyOwner{
     require(_reviewers.length > 0, 'Array is empty. please add a reviewer public address');
@@ -49,12 +49,12 @@ contract Review is Ownable {
     }
 
     //Define a function to submit paper scores
-    function submitPaperScore(uint _paperId, uint[5] memory _scores) public {
+    function submitReviewerScore(uint _paperId, uint[5] memory _scores) public {
         require(isReviewer(msg.sender), 'You are not a reviewer');
         require(allowed(msg.sender, _paperId), 'You are not allowed to submit score for this paper');
         reviewers[msg.sender].scores[_paperId] = _scores;
         reviewers[msg.sender].allowed[_paperId] = false;
-        emit PaperScoreSubmitted(_paperId, _scores);                       
+        emit ReviewScoreSubmitted(_paperId, _scores);                       
     }
 
     //Define a fucntion to pass access to next reviewer

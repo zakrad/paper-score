@@ -24,10 +24,8 @@ contract PaperScore is ERC1155, AccessControl, ERC1155Supply {
     enum State 
     { 
       Submitted,   //0
-      Checked,     //1
-      UnderReview, //2 
-      Reviewed,    //3
-      Published    //4
+      Reviewed,    //1
+      Published,   //2
     }
 
     // Define a default state with submitted state:
@@ -39,35 +37,22 @@ contract PaperScore is ERC1155, AccessControl, ERC1155Supply {
         address author;      // Author address
         string title;        // Paper title
         string ipfsHash;     // Ipfs address of paper
+        string comments;     // Ipfs address of paper
         uint accessPrice;    // Price to mint an access NFT
-        uint medianScore;    // Median score of paper calculated by PaperScore
+        uint paperScore;    // Median score of paper calculated by PaperScore
         State paperState;    // Paper State as represented in the enum State
         address[] reviewers; // Array of reviewers 
     }
 
     // Define 5 events with the same 5 state values and accept 'paperId' as input argument
-    event Submitted(uint indexed paperId, string ipfsHash, address[] reviewers);
-    event Checked(uint paperId);
-    event UnderReview(uint paperId);
-    event Reviwed(uint paperId);
+    event PaperSubmitted(uint indexed paperId, string ipfsHash, address[] reviewers);
+    event ScoreSubmitted(uint indexed paperId, uint paperScore, string comments);
     event Published(uint paperId);
 
     // Modifiers
     // Define a modifier that checks if a paper.state of a paperId is Submitted
     modifier submitted(uint _paperId) {
       require(papers[_paperId].paperState == State.Submitted, "This paper hasn't been submitted yet.");
-      _;
-    }
-
-    // Define a modifier that checks if a paper.state of a paperId is Checked
-    modifier checked(uint _paperId) {
-      require(papers[_paperId].paperState == State.Checked, "This paper hasn't been checked yet.");
-      _;
-    }
-
-    // Define a modifier that checks if a paper.state of a paperId is underReview
-    modifier underReview(uint _paperId) {
-      require(papers[_paperId].paperState == State.UnderReview, "This paper is still under review.");
       _;
     }
 
@@ -81,6 +66,12 @@ contract PaperScore is ERC1155, AccessControl, ERC1155Supply {
     modifier published(uint _paperId) {
       require(papers[_paperId].paperState == State.Published, "This paper hasn't been published yet.");
       _;
+    }
+    
+    // Define a modifier that checks if a paper id is valid
+    modifier correctId(uint _paperId) {
+        require(_paperId <= paperId && _paperId>0, "Please provider a correct paper id");
+        _;
     }
 
     // In the constructor set 'admin' to the address that instantiated the contract
@@ -96,6 +87,7 @@ contract PaperScore is ERC1155, AccessControl, ERC1155Supply {
    function submitPaper(
     string memory _title,
     string memory _ipfsHash,
+    uint _accessPrice,
     address[] memory _reviewers) public payable onlyRole(AUTHOR)
   {
     // require(hasRole(AUTHOR, msg.sender), "You are not the author");
@@ -109,10 +101,12 @@ contract PaperScore is ERC1155, AccessControl, ERC1155Supply {
         title: _title,
         // Ipfs Address of paper:
         ipfsHash: _ipfsHash,
+        // Reviewers comments:
+        comments: '',
         // Paper price to mint access NFT:
-        accessPrice: uint(0),
-        // Median Score::
-        medianScore: uint(0),
+        accessPrice: _accessPrice,
+        // Paper Score::
+        paperScore: uint(0),
         // Paper state:
         paperState: defaultState,
         // Suggested reviewers by author:
@@ -120,19 +114,45 @@ contract PaperScore is ERC1155, AccessControl, ERC1155Supply {
         });
 
     // Emit submit event
-    emit Submitted(paperId, _ipfsHash, _reviewers);
+    emit PaperSubmitted(paperId, _ipfsHash, _reviewers);
     // Increment paperId
     paperId++;
   }
+
+  function submitPaperScore(
+    uint _paperScore,
+    uint _paperId,
+    string memory _comments) correctId(_paperId) submitted(_paperId) public onlyRole(DEFAULT_ADMIN_ROLE){
+      papers[_paperId].paperScore = _paperScore;
+      papers[_paperId].comments = _comments;
+      papers[_paperId].paperScore = 1;
+      emit ScoreSubmitted(_paperId, _paperScore, _comments);
+  }
+
+  function publishPaper(uint _paperId) reviewed(_paperId) public payable onlyRole(AUTHOR){
+        papers[_paperId].paperScore = 2;
+        _mint(msg.sender, _paperId, 1, "");
+  }
+
+  function revisionPaper(
+    uint _paperId,    
+    string memory _title,
+    string memory _ipfsHash,
+    uint _accessPrice,
+    address[] memory _reviewers) reviewed(_paperId) public payable onlyRole(AUTHOR){
+        
+  } 
+
 
   // Define a function 'fetchPaperData' that fetches the data
   function fetchPaperData(uint _paperId) public view returns(
     uint id, 
     address author, 
     string memory title, 
-    string memory ipfsHash, 
+    string memory ipfsHash,
+    string memory comments, 
     uint accessPrice, 
-    uint medianScore, 
+    uint paperScore, 
     State paperState, 
     address[] memory reviewers)
   {
@@ -140,8 +160,9 @@ contract PaperScore is ERC1155, AccessControl, ERC1155Supply {
     author = papers[_paperId].author;
     title = papers[_paperId].title;
     ipfsHash = papers[_paperId].ipfsHash;
+    comments = papers[_paperId].comments;
     accessPrice = papers[_paperId].accessPrice;
-    medianScore = papers[_paperId].medianScore;
+    paperScore = papers[_paperId].paperScore;
     paperState = papers[_paperId].paperState;
     reviewers = papers[_paperId].reviewers;
 
@@ -150,20 +171,15 @@ contract PaperScore is ERC1155, AccessControl, ERC1155Supply {
       author,
       title,
       ipfsHash,
+      comments,
       accessPrice,
-      medianScore,
+      paperScore,
       paperState,
       reviewers
     );
   }
 
-   function checkPaper(
-    string memory _paperId,
-    string memory _ipfsHash,
-    address[] memory _reviewers) public   onlyRole(DEFAULT_ADMIN_ROLE)
-  {
 
-  }
 
 
 
