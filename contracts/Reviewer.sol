@@ -10,12 +10,21 @@ contract Review is AccessControl {
     // address => Reviewer
     mapping(address => Reviewer) reviewers;
     mapping(address => bool) reviewerExists;
-    mapping(address => mapping(uint => bool)) idExists;
 
     struct Reviewer {
         address reviewer;     // Reviewer address
         uint reviewerScore;   // Reviewer Score
-        uint[] allowToReview; // Array of paper ids to review
+        mapping (uint => bool) allowed; // Allowed ids to review 
+    }
+
+    struct PaperScore {
+        uint paperId;     // Paper unique id
+        uint reviewerScore;   // Reviewer Score
+        Score scores; // Scores 
+    }
+
+    struct Score {
+        uint[] scores;
     }
 
 
@@ -26,6 +35,7 @@ contract Review is AccessControl {
 
     // Define a function to add a reviewer
     function addReviewer(address[] memory _reviewers) public onlyRole(DEFAULT_ADMIN_ROLE){
+    require(_reviwers.length > 0, 'Array is empty. please add a reviewer public address');
     for (uint256 i = 0; i < _reviewers.length; i++)
         if(!isReviewer(_reviewers[i]) && _reviewers[i] != address(0)){
           reviewerExists[_reviewers[i]] = true;
@@ -35,15 +45,18 @@ contract Review is AccessControl {
 
     // Define a function to assign paper to reviewer
     function assignPaper(address[] memory _reviewers, uint[] memory _paperIds) public onlyRole(DEFAULT_ADMIN_ROLE){
+    require(_reviwers.length > 0 && _paperIds.length > 0, 'You can not send and empty array');
     for (uint256 i = 0; i < _reviewers.length; i++)
         if(isReviewer(_reviewers[i])){
             for(uint256 j = 0; j < _paperIds.length; j++){
-                if(!paperExists(_reviewers[i], _paperIds[j]))
-                idExists[_reviewers[i]][_paperIds[j]] = true;
-                reviewers[_reviewers[i]].allowToReview[j] = _paperIds[j];
+                if(!allowed(_reviewers[i], _paperIds[j]))
+                reviewers[_reviewers[i]].allowed[_paperIds[j]] = true;
             }
         }            
     }
+
+    //
+    // function submitPaperScore(uint){}
 
     
 
@@ -52,7 +65,7 @@ contract Review is AccessControl {
        return reviewerExists[_address];
     }
 
-    function paperExists(address _address, uint _paperId) public view returns(bool _exists) {
-        return idExists[_address][_paperId];
+    function allowed(address _address, uint _paperId) public view returns(bool _exists) {
+        return reviewers[_address].allowed[_paperId];
     }
 }
