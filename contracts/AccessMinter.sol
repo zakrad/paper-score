@@ -13,7 +13,7 @@ contract AccessMinter is ERC1155, Ownable, ERC1155Supply, IAccessMinter {
     mapping(uint => uint) price;
 
     event submitted(uint indexed paperId);
-    event nftMinted(address msg.sender, uint indexed paperId);
+    event nftMinted(address minter, uint indexed paperId);
 
     modifier checkSupply(uint _paperId) {
         require(supply[_paperId] > 0 , "There is not Access nft left to mint");
@@ -22,8 +22,8 @@ contract AccessMinter is ERC1155, Ownable, ERC1155Supply, IAccessMinter {
 
     constructor() ERC1155("https://paperscore-metadata-api/{id}") {}
 
-    /// @inheritdoc IAccessMinter (Needs modification to ensure just Caller contract can access it)
-    function submit(uint _paperId, address _author, uint _maxSupply, uint _price) external {
+    //Needs modification to ensure just Caller contract can access it
+    function submit(uint _paperId, address _author, uint _maxSupply, uint _price) external override {
         authors[_paperId] = _author;
         supply[_paperId] = _maxSupply;
         price[_paperId] = _price;
