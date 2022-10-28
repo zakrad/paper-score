@@ -9,10 +9,20 @@ contract AccessMinter is ERC1155, AccessControl, ERC1155Supply {
     bytes32 public constant URI_SETTER_ROLE = keccak256("URI_SETTER_ROLE");
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
+    mapping(uint => address) authors;
+
     constructor() ERC1155("") {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(URI_SETTER_ROLE, msg.sender);
         _grantRole(MINTER_ROLE, msg.sender);
+    }
+
+    function submit(uint _uniqueId, address _author) external {
+        authors[_uniqueId] = _author;
+    }
+
+    function mintAccess(uint _uniqueId) payable public {
+        _mint(msg.sender, _uniqueId, 1, '');
     }
 
     function setURI(string memory newuri) public onlyRole(URI_SETTER_ROLE) {
