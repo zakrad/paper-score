@@ -11,9 +11,9 @@ contract Review is Ownable {
 
 
     struct Reviewer {
-        address reviewer;     // Reviewer address
-        uint reviewerPoint;   // Reviewer Score
-        mapping (uint => bool) allowed; // Allowed ids to review 
+        address reviewer;                 // Reviewer address
+        uint reviewerPoint;               // Reviewer Score
+        mapping (uint => bool) allowed;   // Allowed ids to review 
         mapping (uint => uint[5]) scores; // Ids to submitted scores
     }
 
