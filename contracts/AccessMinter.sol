@@ -2,45 +2,39 @@
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Supply.sol";
+import "./IAccessMinter.sol";
 
-contract AccessMinter is ERC1155, AccessControl, ERC1155Supply {
-    bytes32 public constant URI_SETTER_ROLE = keccak256("URI_SETTER_ROLE");
-    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+contract AccessMinter is ERC1155, Ownable, ERC1155Supply, IAccessMinter {
 
     mapping(uint => address) authors;
+    mapping(uint => uint) supply;
+    mapping(uint => uint) price;
 
-    constructor() ERC1155("") {
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _grantRole(URI_SETTER_ROLE, msg.sender);
-        _grantRole(MINTER_ROLE, msg.sender);
+    modifier checkSupply(uint _paperId) {
+        require(supply[_paperId] > 0 , "There is not Access nft left to mint");
+        _;
     }
 
-    function submit(uint _uniqueId, address _author) external {
-        authors[_uniqueId] = _author;
+    constructor() ERC1155("https://paperscore-metadata-api/{id}") {}
+
+    /// @inheritdoc IAccessMinter
+    function submit(uint _paperId, address _author, uint _maxSupply, uint _price) external {
+        require(msg.sender == _author, 'You can not submit for this paper');
+        authors[_paperId] = _author;
+        supply[_paperId] = _maxSupply;
+        price[_paperId] = _price;
     }
 
-    function mintAccess(uint _uniqueId) payable public {
-        _mint(msg.sender, _uniqueId, 1, '');
+    function mintAccess(uint _paperId) checkSupply(_paperId) payable public {
+        require(price[_paperId] == msg.value, 'Please send exact amount of ETHER');
+        supply[_paperId]--;
+        _mint(msg.sender, _paperId, 1, '');
     }
 
-    function setURI(string memory newuri) public onlyRole(URI_SETTER_ROLE) {
+    function setURI(string memory newuri) public onlyOwner {
         _setURI(newuri);
-    }
-
-    function mint(address account, uint256 id, uint256 amount, bytes memory data)
-        public
-        onlyRole(MINTER_ROLE)
-    {
-        _mint(account, id, amount, data);
-    }
-
-    function mintBatch(address to, uint256[] memory ids, uint256[] memory amounts, bytes memory data)
-        public
-        onlyRole(MINTER_ROLE)
-    {
-        _mintBatch(to, ids, amounts, data);
     }
 
     // The following functions are overrides required by Solidity.
@@ -55,7 +49,7 @@ contract AccessMinter is ERC1155, AccessControl, ERC1155Supply {
     function supportsInterface(bytes4 interfaceId)
         public
         view
-        override(ERC1155, AccessControl)
+        override(ERC1155)
         returns (bool)
     {
         return super.supportsInterface(interfaceId);

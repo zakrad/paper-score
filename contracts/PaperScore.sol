@@ -3,10 +3,12 @@ pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import "./IAccessMinter.sol";
 
-contract PaperScore is ERC1155, AccessControl {
+contract PaperScore is ERC1155, AccessControl{
     bytes32 public constant URI_SETTER_ROLE = keccak256("URI_SETTER_ROLE");
     bytes32 public constant AUTHOR = keccak256("AUTHOR");
+    IAccessMinter public accessMinter;
 
     // Define Id variable for each paper
     uint paperCount = 1;
@@ -34,8 +36,7 @@ contract PaperScore is ERC1155, AccessControl {
         string title;        // Paper title
         string ipfsHash;     // Ipfs address of paper
         string comments;     // Ipfs address of paper
-        uint accessPrice;    // Price to mint an access NFT
-        uint paperScore;    // Median score of paper calculated by PaperScore
+        uint paperScore;     // Median score of paper calculated by PaperScore
         State paperState;    // Paper State as represented in the enum State
         address[] reviewers; // Array of reviewers 
     }
@@ -64,17 +65,12 @@ contract PaperScore is ERC1155, AccessControl {
       _;
     }
     
-    // // Define a modifier that checks if a paper id is valid
-    // modifier correctId(uint _paperId) {
-    //     require(_paperId <= paperId && _paperId>0, "Please provider a correct paper id");
-    //     _;
-    // }
-
     // In the constructor set 'admin' to the address that instantiated the contract
-    constructor() ERC1155("https://paperscore-metadata-api/{id}") {
+    constructor(address _accessMinter) ERC1155("https://paperscore-metadata-api/{id}") {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(URI_SETTER_ROLE, msg.sender);
         _grantRole(AUTHOR, msg.sender);
+        accessMinter =  IAccessMinter(_accessMinter);
     }
     
    // Functions //
@@ -83,14 +79,14 @@ contract PaperScore is ERC1155, AccessControl {
    function submitPaper(
     string memory _title,
     string memory _ipfsHash,
-    uint _accessPrice,
     address[] memory _reviewers) public payable onlyRole(AUTHOR)
   {
+    uint paperId = uint(keccak256(abi.encodePacked(msg.sender, paperCount)));
     // require(hasRole(AUTHOR, msg.sender), "You are not the author");
     // Add the new paper
-    papers[paperCount] = Paper({
+    papers[paperId] = Paper({
         // Paper ID:
-        paperId: uint(keccak256(abi.encodePacked(msg.sender, paperCount))),
+        paperId: paperId,
         // Author address:
         author: msg.sender,
         // Title:
@@ -99,8 +95,6 @@ contract PaperScore is ERC1155, AccessControl {
         ipfsHash: _ipfsHash,
         // Reviewers comments:
         comments: '',
-        // Paper price to mint access NFT:
-        accessPrice: _accessPrice,
         // Paper Score::
         paperScore: uint(0),
         // Paper state:
@@ -110,7 +104,7 @@ contract PaperScore is ERC1155, AccessControl {
         });
 
     // Emit submit event
-    emit PaperSubmitted(papers[paperCount].paperId, _ipfsHash, _reviewers);
+    emit PaperSubmitted(papers[paperId].paperId , _ipfsHash, _reviewers);
     // Increment paperId
     paperCount++;
   }
@@ -125,9 +119,10 @@ contract PaperScore is ERC1155, AccessControl {
       emit ScoreSubmitted(_paperId, _paperScore, _comments);
   }
 
-  function publishPaper(uint _paperId) reviewed(_paperId) public payable onlyRole(AUTHOR){
+  function publishPaper(uint _paperId, uint _supply, uint _accessPrice) reviewed(_paperId) public payable onlyRole(AUTHOR){
         papers[_paperId].paperState = State.Published;
         _mint(msg.sender, _paperId, 1, "");
+        accessMinter.submit(_paperId, msg.sender, _supply, _accessPrice);
         emit PaperPublished(_paperId);
   }
 
@@ -135,11 +130,9 @@ contract PaperScore is ERC1155, AccessControl {
     uint _paperId,    
     string memory _title,
     string memory _ipfsHash,
-    uint _accessPrice,
     address[] memory _reviewers) reviewed(_paperId) public payable onlyRole(AUTHOR){
         papers[_paperId].title = _title;
         papers[_paperId].ipfsHash = _ipfsHash;
-        papers[_paperId].accessPrice = _accessPrice;
         papers[_paperId].reviewers = _reviewers;
         papers[_paperId].paperState = State.Submitted;
         emit PaperSubmitted(_paperId, _ipfsHash, _reviewers);
@@ -152,8 +145,7 @@ contract PaperScore is ERC1155, AccessControl {
     address author, 
     string memory title, 
     string memory ipfsHash,
-    string memory comments, 
-    uint accessPrice, 
+    string memory comments,
     uint paperScore, 
     State paperState, 
     address[] memory reviewers)
@@ -163,7 +155,6 @@ contract PaperScore is ERC1155, AccessControl {
     title = papers[_paperId].title;
     ipfsHash = papers[_paperId].ipfsHash;
     comments = papers[_paperId].comments;
-    accessPrice = papers[_paperId].accessPrice;
     paperScore = papers[_paperId].paperScore;
     paperState = papers[_paperId].paperState;
     reviewers = papers[_paperId].reviewers;
@@ -174,7 +165,6 @@ contract PaperScore is ERC1155, AccessControl {
       title,
       ipfsHash,
       comments,
-      accessPrice,
       paperScore,
       paperState,
       reviewers
