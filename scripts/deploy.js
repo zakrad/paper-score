@@ -2,7 +2,7 @@
 
 async function main() {
 
-  const PaperScore = await hre.ethers.getContractFactory("PaperScore");
+  const PaperScore = await hre.ethers.getContractFactory("Author");
   // const paperscore = await upgrades.deployProxy(PaperScore);
   const paperscore = await PaperScore.deploy()
 

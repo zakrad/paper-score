@@ -3,9 +3,10 @@ pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "./IAccessMinter.sol";
 
-contract PaperScore is ERC1155, AccessControl{
+contract Author is ERC1155, AccessControl, Initializable{
     bytes32 public constant URI_SETTER_ROLE = keccak256("URI_SETTER_ROLE");
     bytes32 public constant AUTHOR = keccak256("AUTHOR");
     IAccessMinter public accessMinter;
@@ -64,12 +65,14 @@ contract PaperScore is ERC1155, AccessControl{
       require(papers[_paperId].paperState == State.Published, "This paper hasn't been published yet.");
       _;
     }
-    
-    // In the constructor set 'admin' to the address that instantiated the contract
-    constructor(address _accessMinter) ERC1155("https://paperscore-metadata-api/{id}") {
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _grantRole(URI_SETTER_ROLE, msg.sender);
-        _grantRole(AUTHOR, msg.sender);
+
+    // In the initialize set 'admin' to the address that instantiated the contract
+    function initialize(address memory _accessMinter, string memory _uri, address memory _author, address memory _admin) public initializer  {
+        __ERC1155_init(_uri);
+        __AccessControl_init();
+        _grantRole(DEFAULT_ADMIN_ROLE, _admin);
+        _grantRole(URI_SETTER_ROLE, _admin);
+        _grantRole(AUTHOR, _author);
         accessMinter =  IAccessMinter(_accessMinter);
     }
     
