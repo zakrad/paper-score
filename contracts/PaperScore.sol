@@ -10,7 +10,7 @@ contract PaperScore is ERC1155, AccessControl{
     bytes32 public constant AUTHOR = keccak256("AUTHOR");
     IAccessMinter public accessMinter;
 
-    // Define Id variable for each paper
+    // Define Count paper to make a unique id for each paper
     uint paperCount = 1;
 
     // Define a public mapping 'papers' that maps the Id to a paper.
@@ -35,13 +35,13 @@ contract PaperScore is ERC1155, AccessControl{
         address author;      // Author address
         string title;        // Paper title
         string ipfsHash;     // Ipfs address of paper
-        string comments;     // Ipfs address of paper
+        string comments;     // Ipfs address of comments
         uint paperScore;     // Median score of paper calculated by PaperScore
         State paperState;    // Paper State as represented in the enum State
-        address[] reviewers; // Array of reviewers 
+        address[] reviewers; // Array of suggested reviewers 
     }
 
-    // Define 5 events with the same 5 state values and accept 'paperId' as input argument
+    // Define 3 events with the same 3 state values and accept 'paperId' as input argument
     event PaperSubmitted(uint indexed paperId, string ipfsHash, address[] reviewers);
     event ScoreSubmitted(uint indexed paperId, uint paperScore, string comments);
     event PaperPublished(uint indexed paperId);
@@ -81,8 +81,8 @@ contract PaperScore is ERC1155, AccessControl{
     string memory _ipfsHash,
     address[] memory _reviewers) public payable onlyRole(AUTHOR)
   {
+    // Make a unique identifier by hashing Count with msg.sender address which is Author itself
     uint paperId = uint(keccak256(abi.encodePacked(msg.sender, paperCount)));
-    // require(hasRole(AUTHOR, msg.sender), "You are not the author");
     // Add the new paper
     papers[paperId] = Paper({
         // Paper ID:
