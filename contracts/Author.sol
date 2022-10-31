@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
-import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "./IAccessMinter.sol";
 
-contract Author is ERC1155, AccessControl, Initializable{
+contract Author is Initializable, ERC1155Upgradeable, AccessControlUpgradeable {
     bytes32 public constant URI_SETTER_ROLE = keccak256("URI_SETTER_ROLE");
     bytes32 public constant AUTHOR = keccak256("AUTHOR");
     IAccessMinter public accessMinter;
 
     // Define Count paper to make a unique id for each paper
-    uint paperCount = 1;
+    uint paperCount;
 
     // Define a public mapping 'papers' that maps the Id to a paper.
     // uint => Paper
@@ -67,13 +67,14 @@ contract Author is ERC1155, AccessControl, Initializable{
     }
 
     // In the initialize set 'admin' to the address that instantiated the contract
-    function initialize(address memory _accessMinter, string memory _uri, address memory _author, address memory _admin) public initializer  {
+    function initialize(address _accessMinter, string memory _uri, address _author, address _admin) public initializer  {
         __ERC1155_init(_uri);
         __AccessControl_init();
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
         _grantRole(URI_SETTER_ROLE, _admin);
         _grantRole(AUTHOR, _author);
         accessMinter =  IAccessMinter(_accessMinter);
+        paperCount = 1;
     }
     
    // Functions //
@@ -181,7 +182,7 @@ contract Author is ERC1155, AccessControl, Initializable{
     function supportsInterface(bytes4 interfaceId)
         public
         view
-        override(ERC1155, AccessControl)
+        override(ERC1155Upgradeable, AccessControlUpgradeable)
         returns (bool)
     {
         return super.supportsInterface(interfaceId);

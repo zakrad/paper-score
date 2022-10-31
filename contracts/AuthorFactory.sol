@@ -5,27 +5,29 @@ import "@openzeppelin/contracts/proxy/Clones.sol";
 import "./Author.sol";
 
 contract AuthorFactory {
-    Authors[] public authorAddresses;
+    address[] public authorAddresses;
     
-    event AuthorCreated(Author author);
+    event AuthorCreated(address author);
 
     address private paperScoreAdmin;
     address private accessMinter;
     address immutable authorImplementation;
 
-    constructor(address _accessMinter, address _paperScoreAdmin) public {
+    constructor(address _accessMinter, address _paperScoreAdmin) {
         accessMinter = _accessMinter;
         paperScoreAdmin = _paperScoreAdmin;
         authorImplementation = address(new Author());
     }
 
-    function createAuthor(uint256 initialBalance) external returns(address) {
+    function createAuthor() external returns(address) {
         address clone = Clones.clone(authorImplementation);
-        Author(clone).initialize(accessMinter, "paper-score-api/{id}", msg.sender, paperScoreAdmin);
-        emit AuthorCreated(author);
+        Author(clone).initialize(accessMinter, "https://paper-score-api/{id}", msg.sender, paperScoreAdmin);
+        authorAddresses.push(clone);
+        emit AuthorCreated(clone);
+        return clone;
     }
 
-    function getMetaCoins() external view returns (MetaCoin[] memory) {
-        return metaCoinAddresses;
+    function getAuthors() external view returns (address[] memory) {
+        return authorAddresses;
     }
 }
