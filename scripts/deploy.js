@@ -1,16 +1,44 @@
-// const { ethers, upgrades } = require("hardhat");
+const { ethers, upgrades } = require("hardhat");
 
 async function main() {
 
-  const PaperScore = await hre.ethers.getContractFactory("Author");
+  const Reviewer = await ethers.getContractFactory("Reviewer");
   // const paperscore = await upgrades.deployProxy(PaperScore);
-  const paperscore = await PaperScore.deploy()
+  const reviewer = await Reviewer.deploy();
 
-  await paperscore.deployed();
+  await reviewer.deployed();
 
   console.log(
-    `deployed to ${paperscore.address}`
+    `REVIEWER deployed to ${reviewer.address}`
   );
+
+  const AccessMinter = await ethers.getContractFactory("AccessMinter");
+  const accessminter = await AccessMinter.deploy();
+  await accessminter.deployed();
+
+  console.log(
+    `accessminter deployed to ${accessminter.address}`
+  );
+
+  const Author = await ethers.getContractFactory("Author");
+  const author = await Author.deploy();
+  await author.deployed();
+
+  console.log(
+    `author deployed to ${author.address}`
+  );
+
+  const AuthorFactory = await ethers.getContractFactory("AuthorFactory");
+  const authorfactory = await AuthorFactory.deploy();
+  await authorfactory.deployed();
+
+  console.log(
+    `authorfactory deployed to ${authorfactory.address}`
+  );
+
+  
+
+
 }
 
 // We recommend this pattern to be able to use async/await everywhere
