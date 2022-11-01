@@ -19,11 +19,12 @@ contract AuthorFactory {
         authorImplementation = address(new Author());
     }
 
-    function createAuthor() external {
+    function createAuthor() external returns(address clone){
         address clone = Clones.clone(authorImplementation);
         Author(clone).initialize(accessMinter, "https://paper-score-api/{id}", msg.sender, paperScoreAdmin);
         authorAddresses.push(clone);
         emit AuthorCreated(clone);
+        return clone;
     }
 
     function getAuthors() external view returns (address[] memory) {

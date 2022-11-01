@@ -66,6 +66,11 @@ contract Author is Initializable, ERC1155Upgradeable, AccessControlUpgradeable {
       _;
     }
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
     // In the initialize set 'admin' to the address that instantiated the contract
     function initialize(address _accessMinter, string memory _uri, address _author, address _admin) public initializer  {
         __ERC1155_init(_uri);
