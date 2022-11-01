@@ -5,24 +5,31 @@ const {
 const { anyValue } = require("@nomicfoundation/hardhat-chai-matchers/withArgs");
 const { expect } = require("chai");
 
-describe("Lock", function () {
+describe("PaperScore", function () {
   // We define a fixture to reuse the same setup in every test.
   // We use loadFixture to run this setup once, snapshot that state,
   // and reset Hardhat Network to that snapshot in every test.
-  async function deployOneYearLockFixture() {
-    const ONE_YEAR_IN_SECS = 365 * 24 * 60 * 60;
-    const ONE_GWEI = 1_000_000_000;
+  async function deployAll() {
+    const [deployer] = await ethers.getSigners();
+    const Deployer = deployer.address;
+    const Reviewer = await ethers.getContractFactory("Review");
+    // const paperscore = await upgrades.deployProxy(PaperScore);
+    const reviewer = await Reviewer.deploy();
 
-    const lockedAmount = ONE_GWEI;
-    const unlockTime = (await time.latest()) + ONE_YEAR_IN_SECS;
+    await reviewer.deployed();
+    const revieweraddress = reviewer.address;
 
-    // Contracts are deployed using the first signer/account by default
-    const [owner, otherAccount] = await ethers.getSigners();
+    const AccessMinter = await ethers.getContractFactory("AccessMinter");
+    const accessminter = await AccessMinter.deploy();
+    await accessminter.deployed();
+    const accessminteraddress = accessminter.address;
 
-    const Lock = await ethers.getContractFactory("Lock");
-    const lock = await Lock.deploy(unlockTime, { value: lockedAmount });
+    const AuthorFactory = await ethers.getContractFactory("AuthorFactory");
+    const authorfactory = await AuthorFactory.deploy(accessminter.address, Deployer);
+    await authorfactory.deployed();
+    const authorfactoryaddress = authorfactory.address;
 
-    return { lock, unlockTime, lockedAmount, owner, otherAccount };
+    return { revieweraddress, accessminteraddress, authorfactoryaddress, Deployer};
   }
 
   describe("Deployment", function () {
