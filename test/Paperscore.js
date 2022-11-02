@@ -2,15 +2,18 @@ const {
   time,
   loadFixture,
 } = require("@nomicfoundation/hardhat-network-helpers");
+require("@nomiclabs/hardhat-ethers");
 const { anyValue } = require("@nomicfoundation/hardhat-chai-matchers/withArgs");
 const { expect } = require("chai");
+const fs = require("fs")
+const path = require("path")
 
 describe("PaperScore", function () {
   // We define a fixture to reuse the same setup in every test.
   // We use loadFixture to run this setup once, snapshot that state,
   // and reset Hardhat Network to that snapshot in every test.
   async function deployAll() {
-    const [deployer] = await ethers.getSigners();
+    const [deployer, authorCreator] = await ethers.getSigners();
     const Deployer = deployer.address;
     const Reviewer = await ethers.getContractFactory("Review");
     // const paperscore = await upgrades.deployProxy(PaperScore);
@@ -29,40 +32,75 @@ describe("PaperScore", function () {
     await authorfactory.deployed();
     const authorfactoryaddress = authorfactory.address;
 
-    return { reviewer, accessminter, authorfactory, revieweraddress, accessminteraddress, authorfactoryaddress, Deployer, deployer };
+    const Author = await ethers.getContractFactory("Author");
+    const author = await Author.deploy();
+    await author.deployed();
+
+    const dir = path.resolve(
+      __dirname,
+      "../artifacts/contracts/Author.sol/Author.json"
+    )
+    const file = fs.readFileSync(dir, "utf8")
+    const json = JSON.parse(file)
+    const authorAbi = json.abi;
+
+    await authorfactory.connect(authorCreator).createAuthor();
+    const [author1] = await authorfactory.getAuthors();
+    const clonedAuthor = new ethers.Contract(author1, authorAbi, authorCreator);
+
+    return { reviewer, accessminter, authorfactory, revieweraddress, accessminteraddress, authorfactoryaddress, Deployer, deployer, authorAbi, clonedAuthor, authorCreator };
   }
 
-  describe("Deployment", function () {
+  describe("Author: Deployment", function () {
     it("Should set the right Admin", async function () {
       const { deployer, Deployer } = await loadFixture(deployAll);
-
       expect(deployer.address).to.equal(Deployer);
     });
+    it("Should create proxy with sender address as author", async function () {
+      const [account2] = await ethers.getSigners();
+      const { authorfactory, authorAbi } = await loadFixture(deployAll);
+      await authorfactory.connect(account2).createAuthor();
+      const [author1, author2] = await authorfactory.getAuthors();
+      const clonedAuthor = new ethers.Contract(author2, authorAbi, account2);
+      const keccAuthor = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("AUTHOR"));
+      const checkRole = await clonedAuthor.hasRole(keccAuthor, account2.address);
+      expect(checkRole).to.equal(true);
+    });
+    it("Should create proxy with admin address as admin AND uri SETTER", async function () {
+      const [account2] = await ethers.getSigners();
+      const { authorfactory, authorAbi, Deployer } = await loadFixture(deployAll);
+      await authorfactory.connect(account2).createAuthor();
+      const [author1] = await authorfactory.getAuthors();
+      const clonedAuthor = new ethers.Contract(author1, authorAbi, account2);
+      const keccUri = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("URI_SETTER_ROLE"));
+      const keccAdmin = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("DEFAULT_ADMIN_ROLE"));
+      const checkRole = await clonedAuthor.hasRole(keccUri, Deployer);
+      const adminRole = await clonedAuthor.getRoleAdmin(keccAdmin);
+      const checkAdmin2 = await clonedAuthor.hasRole(adminRole, Deployer);
+      expect(checkRole).to.equal(true);
+      expect(checkAdmin2).to.equal(true);
+    });
+    it("Initialize again Should revert with 'Initializable: contract is already initialized'", async function () {
+      const [account2] = await ethers.getSigners();
+      const { authorfactory, authorAbi, Deployer } = await loadFixture(deployAll);
+      await authorfactory.connect(account2).createAuthor();
+      const [author1] = await authorfactory.getAuthors();
+      const clonedAuthor = new ethers.Contract(author1, authorAbi, account2);
+      await expect(clonedAuthor.initialize(Deployer, 'https', Deployer, Deployer)).to.be.revertedWith('Initializable: contract is already initialized')
+    });
+  });
 
-    // it("Should set the right owner", async function () {
-    //   const { lock, owner } = await loadFixture(deployOneYearLockFixture);
+  describe("Author: Functions", function () {
+    it("Submit paper emits event ", async function () {
+      const { clonedAuthor, authorCreator } = await loadFixture(deployAll);
+      const paper = await clonedAuthor.connect(authorCreator).submitPaper('A1', 'hash1', []);
+      console.log(paper);
+      // expect(deployer.address).to.equal(Deployer);
+    });
+  });
 
-    //   expect(await lock.owner()).to.equal(owner.address);
-    // });
+  describe("deployProxy", function () {
 
-    // it("Should receive and store the funds to lock", async function () {
-    //   const { lock, lockedAmount } = await loadFixture(
-    //     deployOneYearLockFixture
-    //   );
-
-    //   expect(await ethers.provider.getBalance(lock.address)).to.equal(
-    //     lockedAmount
-    //   );
-    // });
-
-    // it("Should fail if the unlockTime is not in the future", async function () {
-    //   // We don't use the fixture here because we want a different deployment
-    //   const latestTime = await time.latest();
-    //   const Lock = await ethers.getContractFactory("Lock");
-    //   await expect(Lock.deploy(latestTime, { value: 1 })).to.be.revertedWith(
-    //     "Unlock time should be in the future"
-    //   );
-    // });
   });
 
   // describe("Withdrawals", function () {
